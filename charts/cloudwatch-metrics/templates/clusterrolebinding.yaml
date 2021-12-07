@@ -1,0 +1,19 @@
+{{ if .Values.rbac.create }}
+apiVersion: {{ template "rbac.apiVersion" . }}
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "logzio-cloudwatch-metrics.fullname" . }}
+  labels:
+    app: {{ template "logzio-cloudwatch-metrics.name" . }}
+    chart: {{ template "logzio-cloudwatch-metrics.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "logzio-cloudwatch-metrics.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ template "logzio-cloudwatch-metrics.fullname" . }}
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}

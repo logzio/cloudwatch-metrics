@@ -2,7 +2,7 @@ exporters:
   logging:
     loglevel: info
   prometheusremotewrite:
-    endpoint: https://listener.logz.io:8053
+    endpoint:
     external_labels:
       p8s_logzio_name: cloudwatch-metrics
     headers:
