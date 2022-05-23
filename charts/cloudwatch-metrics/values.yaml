@@ -1,0 +1,155 @@
+replicaCount: 1
+
+image:
+  repository: yotamloe/cw
+  tag: test
+  pullPolicy: Always
+  pullSecrets:
+  # - name: "image-pull-secret"
+
+containerPort: 9106
+
+service:
+  type: ClusterIP
+  port: 9106
+  portName: http
+  annotations:
+    prometheus.io/scrape: "true"
+  labels: {}
+
+pod:
+  labels: {}
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #    memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: false
+  name:
+
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: false
+
+config:
+  otel:
+    # your logz.io region
+    logzio_region: "us"
+    # custom listener address
+    custom_listener: ""
+    # environment tag that will be attached to all samples
+    p8s_logzio_name: "cloudwatch-metrics"
+    # your logz.io metrics token
+    token: ""
+    # the time to wait between scrape requests
+    scrape_interval: 300
+    # the time to wait before throttling remote write post request to logz.io
+    remote_timeout: 120
+    # the time to wait before throttling a scrape request to cloudwatch exporter
+    scrape_timeout: 120
+    # opentelemetry log level
+    log_level: "debug"
+    # python script log level
+    logzio_log_level: "info"
+    # aws credentials
+    AWS_ACCESS_KEY_ID: ""
+    AWS_SECRET_ACCESS_KEY: ""
+  cloudwatch:
+    # set to true if you are loading a custom configuration file for cloudwatch exporter
+    custom_config: "false"
+    # your cloudwatch aws region
+    region: "us-east-1"
+    # role arn to assume
+    role_arn: ""
+    # list of aws cloudwatch namespaces to monitor
+    aws_namespaces: []
+    # The newest data to request. Used to avoid collecting data that has not fully converged
+    delay_seconds: 300
+    # how far back to request data for. Useful for cases such as Billing metrics that are only set every few hours
+    range_seconds: 300
+    # period to request the metric for. Only the most recent data point is used
+    period_seconds: 300
+    # boolean for whether to set the Prometheus metric timestamp as the original Cloudwatch timestamp
+    set_timestamp: "false"
+
+custom_cloudwatch_config:
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Configurable health checks against the /healthy and /ready endpoints
+livenessProbe:
+  path: /-/healthy
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+
+readinessProbe:
+  path: /-/ready
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+
+serviceMonitor:
+  enabled: false
+
+
+prometheusRule:
+  # Specifies whether a PrometheusRule should be created
+  enabled: false
+  # Set the namespace the PrometheusRule should be deployed
+  # namespace: monitoring
+  # Set labels for the PrometheusRule, use this to define your scrape label for Prometheus Operator
+  # labels:
+  # Example - note the Kubernetes convention of camelCase instead of Prometheus'
+  # rules:
+  #    - alert: ELB-Low-BurstBalance
+  #      annotations:
+  #        message: The ELB BurstBalance during the last 10 minutes is lower than 80%.
+  #      expr: aws_ebs_burst_balance_average < 80
+  #      for: 10m
+  #      labels:
+  #        severity: warning
+  #    - alert: ELB-Low-BurstBalance
+  #      annotations:
+  #        message: The ELB BurstBalance during the last 10 minutes is lower than 50%.
+  #      expr: aws_ebs_burst_balance_average < 50
+  #      for: 10m
+  #      labels:
+  #        severity: warning
+  #    - alert: ELB-Low-BurstBalance
+  #      annotations:
+  #        message: The ELB BurstBalance during the last 10 minutes is lower than 30%.
+  #      expr: aws_ebs_burst_balance_average < 30
+  #      for: 10m
+  #      labels:
+  #        severity: critical
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  labels: {}
+  path: /
+  hosts:
+    - chart-example.local
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+priorityClassName: ""

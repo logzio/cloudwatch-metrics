@@ -1,0 +1,20 @@
+apiVersion: v1
+appVersion: "0.10.0"
+description: Cloudwatch metrics integration for logz.io, based on prometheus-cloudwatch-exporter and opentelemetry collector
+name: cloudwatch-metrics
+version: 1.0.0
+home: https://github.com/logzio/cloudwatch-metrics
+sources:
+- https://github.com/logzio/cloudwatch-metrics
+keywords:
+- aws
+- cloudwatch
+- prometheus
+- logz.io
+- logzio
+- opentelemetry
+
+# credit to prometheus-cloudwatch-exporter chart maintainers : gianrubio@gmail.com, mail@torstenwalter.de, asher@asherfoa.com
+maintainers:
+- name: yotamloe
+  email: yotam.loewenbach@logz.io

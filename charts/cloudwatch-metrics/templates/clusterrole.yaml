@@ -1,0 +1,16 @@
+{{- if .Values.rbac.create }}
+apiVersion: {{ template "rbac.apiVersion" . }}
+kind: ClusterRole
+metadata:
+  name: {{ template "logzio-cloudwatch-metrics.fullname" . }}
+  labels:
+    app: {{ template "logzio-cloudwatch-metrics.name" . }}
+    chart: {{ template "logzio-cloudwatch-metrics.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets","configmap"]
+    resourceNames: ["{{ template "logzio-cloudwatch-metrics.fullname" . }}"]
+    verbs: ["get"]
+{{- end }}

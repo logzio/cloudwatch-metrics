@@ -1,0 +1,158 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "logzio-cloudwatch-metrics.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "logzio-cloudwatch-metrics.name" . }}
+    chart: {{ template "logzio-cloudwatch-metrics.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  containers:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "logzio-cloudwatch-metrics.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "logzio-cloudwatch-metrics.name" . }}
+        release: {{ .Release.Name }}
+        {{- if .Values.pod.labels }}
+{{ toYaml .Values.pod.labels | indent 8 }}
+        {{- end }}
+      annotations:
+        {{ if .Values.config.cloudwatch.role_arn}}iam.amazonaws.com/role: {{ .Values.config.cloudwatch.role_arn }}{{ end }}
+    spec:
+      # Because the image's entrypoint requires to write on /fluentd/etc but we mount configmap there which is read-only,
+      # this initContainers workaround or other is needed.
+      # See https://github.com/fluent/fluentd-kubernetes-daemonset/issues/90
+      initContainers:
+        - name: copy-custom-config
+          image: busybox
+          command: ['sh', '-c', 'cp /custom/..data/* /config_files']
+          volumeMounts:
+            - name: custom-cloudwatch-config
+              mountPath: /custom
+            - name: conf
+              mountPath: /config_files
+      containers:
+      {{- with .Values.priorityClassName }}
+      priorityClassName: "{{ . }}"
+      {{- end }}
+    {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.image.pullSecrets | nindent 8 }}
+    {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          env:
+            - name: LOGZIO_REGION
+              value: {{ quote .Values.config.otel.logzio_region }}
+            - name: CUSTOM_LISTENER
+              value: {{ quote .Values.config.otel.custom_listener }}
+            - name: P8S_LOGZIO_NAME
+              value: {{ quote .Values.config.otel.p8s_logzio_name }}
+            - name: TOKEN
+              value: {{ quote .Values.config.otel.token }}
+            - name: SCRAPE_INTERVAL
+              value: {{ quote .Values.config.otel.scrape_interval }}
+            - name: SCRAPE_TIMEOUT
+              value: {{ quote .Values.config.otel.scrape_timeout }}
+            - name: REMOTE_TIMEOUT
+              value: {{ quote .Values.config.otel.remote_timeout }}
+            - name: LOG_LEVEL
+              value: {{ quote .Values.config.otel.log_level }}
+            - name: LOGZIO_LOG_LEVEL
+              value: {{ quote .Values.config.otel.logzio_log_level }}
+            - name: AWS_ACCESS_KEY_ID
+              value: {{ quote .Values.config.otel.AWS_ACCESS_KEY_ID }}
+            - name: AWS_SECRET_ACCESS_KEY
+              value: {{ quote .Values.config.otel.AWS_SECRET_ACCESS_KEY }}
+            {{ if .Values.custom_cloudwatch_config }}
+            - name: CUSTOM_CONFIG
+              value: "true"
+            {{ else }}
+            - name: CUSTOM_CONFIG
+              value: "false"
+            {{ end }}
+            - name: AWS_REGION
+              value: {{ quote .Values.config.cloudwatch.region }}
+            {{ if .Values.config.cloudwatch.role_arn }}
+            - name: AWS_ROLE_ARN
+              value: {{ quote .Values.config.cloudwatch.role_arn }}
+            {{ end }}
+            - name: AWS_NAMESPACES
+              value: {{ quote .Values.config.cloudwatch.aws_namespaces }}
+            - name: DELAY_SECONDS
+              value: {{ quote .Values.config.cloudwatch.delay_seconds }}
+            - name: RANGE_SECONDS
+              value: {{ quote .Values.config.cloudwatch.range_seconds }}
+            - name: PERIOD_SECONDS
+              value: {{ quote .Values.config.cloudwatch.period_seconds }}
+            - name: SET_TIMESTAMP
+              value: {{ quote .Values.config.cloudwatch.set_timestamp }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.command }}
+          command: {{ toYaml .Values.command | nindent 12 -}}
+          {{- end }}
+          ports:
+            - name: container-port
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path }}
+              port: container-port
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path }}
+              port: container-port
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          volumeMounts:
+            - name: custom-cloudwatch-config
+              mountPath: /custom
+            - name: conf
+              mountPath: /config_files
+     {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+      serviceAccount: {{ template "logzio-cloudwatch-metrics.serviceAccountName" . }}
+      serviceAccountName: {{ template "logzio-cloudwatch-metrics.serviceAccountName" . }}
+      volumes:
+      - name: conf
+        emptyDir: {}
+      - configMap:
+          name: {{ template "logzio-cloudwatch-metrics.fullname" . }}
+          defaultMode: 420
+        name: custom-cloudwatch-config
+
+
+
+
