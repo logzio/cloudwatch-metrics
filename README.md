@@ -1,4 +1,8 @@
 # cloudwatch-metrics
+
+## :warning: NOTE: this project is deprected. Please refer to [this project](https://github.com/logzio/cloudwatch-metrics-helpers), instead.
+
+
 Collects cloudwatch metrics and forward them to logz.io, based on opentelemetry collector.
 We simplify the data export and collection for your metrics: You tell us the desired namespaces and regions you want to send your data from and we fetch the most relevant metrics to display in the Logz.io pre-built Infrastructure Monitoring dashboards.
 
